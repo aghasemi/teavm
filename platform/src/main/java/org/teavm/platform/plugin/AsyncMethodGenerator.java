@@ -38,10 +38,12 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
     private static final MethodDescriptor errorMethod = new MethodDescriptor("error", Throwable.class, void.class);
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         MethodReference asyncRef = getAsyncReference(context.getClassSource(), methodRef);
-        writer.append("var thread").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
-        writer.append("var javaThread").ws().append('=').ws().append("$rt_getThread();").softNewLine();
+        writer.append("var thread").ws().append('=').ws().appendFunction("$rt_nativeThread")
+                .append("();").softNewLine();
+        writer.append("var javaThread").ws().append('=').ws().appendFunction("$rt_getThread")
+                .append("();").softNewLine();
         writer.append("if").ws().append("(thread.isResuming())").ws().append("{").indent().softNewLine();
         writer.append("thread.status").ws().append("=").ws().append("0;").softNewLine();
         writer.append("var result").ws().append("=").ws().append("thread.attribute;").softNewLine();
@@ -55,13 +57,14 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
         writer.append("callback.").appendMethod(completeMethod).ws().append("=").ws()
                 .append("function(val)").ws().append("{").indent().softNewLine();
         writer.append("thread.attribute").ws().append('=').ws().append("val;").softNewLine();
-        writer.append("$rt_setThread(javaThread);").softNewLine();
+        writer.appendFunction("$rt_setThread").append("(javaThread);").softNewLine();
         writer.append("thread.resume();").softNewLine();
         writer.outdent().append("};").softNewLine();
         writer.append("callback.").appendMethod(errorMethod).ws().append("=").ws()
                 .append("function(e)").ws().append("{").indent().softNewLine();
-        writer.append("thread.attribute").ws().append('=').ws().append("$rt_exception(e);").softNewLine();
-        writer.append("$rt_setThread(javaThread);").softNewLine();
+        writer.append("thread.attribute").ws().append('=').ws().appendFunction("$rt_exception").append("(e);")
+                .softNewLine();
+        writer.appendFunction("$rt_setThread").append("(javaThread);").softNewLine();
         writer.append("thread.resume();").softNewLine();
         writer.outdent().append("};").softNewLine();
         writer.append("callback").ws().append("=").ws().appendMethodBody(AsyncCallbackWrapper.class, "create",
@@ -78,8 +81,8 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
         }
         writer.append("callback);").softNewLine();
         writer.outdent().append("}").ws().append("catch($e)").ws().append("{").indent().softNewLine();
-        writer.append("callback.").appendMethod(errorMethod).append("($rt_exception($e));")
-                .softNewLine();
+        writer.append("callback.").appendMethod(errorMethod).append("(").appendFunction("$rt_exception")
+                .append("($e));").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.outdent().append("});").softNewLine();
         writer.append("return null;").softNewLine();

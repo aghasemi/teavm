@@ -89,12 +89,12 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         }
     }
 
-    private void generateGetLength(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateGetLength(GeneratorContext context, SourceWriter writer) {
         String array = context.getParameterName(1);
         writer.append("if (" + array + " === null || " + array + ".constructor.$meta.item === undefined) {")
                 .softNewLine().indent();
         MethodReference cons = new MethodReference("java.lang.IllegalArgumentException", "<init>", ValueType.VOID);
-        writer.append("$rt_throw(").appendInit(cons).append("());").softNewLine();
+        writer.appendFunction("$rt_throw").append("(").appendInit(cons).append("());").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return " + array + ".data.length;").softNewLine();
     }
@@ -108,21 +108,25 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         });
     }
 
-    private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateNewInstance(GeneratorContext context, SourceWriter writer) {
         String type = context.getParameterName(1);
         String length = context.getParameterName(2);
         writer.append("if (").append(type).append(".$meta.primitive) {").softNewLine().indent();
         for (String primitive : primitives) {
-            writer.append("if (" + type + " == $rt_" + primitive.toLowerCase() + "cls) {").indent().softNewLine();
-            writer.append("return $rt_create" + primitive + "Array(" + length + ");").softNewLine();
+            writer.append("if").ws().append("(").append(type).ws().append("===").ws()
+                    .appendFunction("$rt_" + primitive.toLowerCase() + "cls")
+                    .append(") {").indent().softNewLine();
+            writer.append("return ").ws().appendFunction("$rt_create" + primitive + "Array")
+                    .append("(" + length + ");").softNewLine();
             writer.outdent().append("}").softNewLine();
         }
         writer.outdent().append("} else {").indent().softNewLine();
-        writer.append("return $rt_createArray(" + type + ", " + length + ")").softNewLine();
+        writer.append("return ").appendFunction("$rt_createArray").append("(" + type + ", " + length + ")")
+                .softNewLine();
         writer.outdent().append("}").softNewLine();
     }
 
-    private void generateGet(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateGet(GeneratorContext context, SourceWriter writer) {
         String array = context.getParameterName(1);
         writer.append("var item = " + array + ".data[" + context.getParameterName(2) + "];").softNewLine();
         writer.append("var type = " + array + ".constructor.$meta.item;").softNewLine();
@@ -134,7 +138,9 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             if (cls == null || cls.getMethod(methodRef.getDescriptor()) == null) {
                 continue;
             }
-            writer.append("if (type === $rt_" + primitives[i].toLowerCase() + "cls) {").indent().softNewLine();
+            writer.append("if").ws().append("(type").ws().append("===")
+                    .ws().appendFunction("$rt_" + primitives[i].toLowerCase() + "cls").append(")").ws().append("{")
+                    .indent().softNewLine();
             writer.append("return ").appendMethodBody(methodRef).append("(item);").softNewLine();
             writer.outdent().append("} else ");
         }
@@ -143,7 +149,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.outdent().append("}").softNewLine();
     }
 
-    private void generateSet(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateSet(GeneratorContext context, SourceWriter writer) {
         String array = context.getParameterName(1);
         String item = context.getParameterName(3);
         writer.append("var type = " + array + ".constructor.$meta.item;").softNewLine();
@@ -160,7 +166,9 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                 writer.append(" else ");
             }
             first = false;
-            writer.append("if (type === $rt_" + primitives[i].toLowerCase() + "cls) {").indent().softNewLine();
+            writer.append("if").ws().append("(type").ws().append("===").ws()
+                    .appendFunction("$rt_" + primitives[i].toLowerCase() + "cls").append(")").ws()
+                    .append("{").indent().softNewLine();
             writer.append(item + " = ").appendMethodBody(methodRef).append("(" + item + ");").softNewLine();
             writer.outdent().append("}");
         }

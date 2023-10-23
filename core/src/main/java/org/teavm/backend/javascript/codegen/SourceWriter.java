@@ -21,235 +21,101 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class SourceWriter implements Appendable, LocationProvider {
-    private final Appendable innerWriter;
-    private int indentSize;
-    private final NamingStrategy naming;
-    private boolean lineStart;
-    private boolean minified;
-    private final int lineWidth;
-    private int column;
-    private int line;
-    private int offset;
-
-    SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
-        this.naming = naming;
-        this.innerWriter = innerWriter;
-        this.lineWidth = lineWidth;
-    }
-
-    void setMinified(boolean minified) {
-        this.minified = minified;
-    }
-
-    public SourceWriter append(String value) throws IOException {
+public abstract class SourceWriter implements Appendable {
+    public SourceWriter append(String value) {
         append((CharSequence) value);
         return this;
     }
 
-    public SourceWriter appendBlockStart() throws IOException {
+    public SourceWriter appendBlockStart() {
         return ws().append("{").indent().softNewLine();
     }
 
-    public SourceWriter appendBlockEnd() throws IOException {
+    public SourceWriter appendBlockEnd() {
         return outdent().append("}").softNewLine();
     }
 
-    public SourceWriter appendIf() throws IOException {
+    public SourceWriter appendIf() {
         return append("if").ws().append("(");
     }
 
-    public SourceWriter appendElseIf() throws IOException {
+    public SourceWriter appendElseIf() {
         return outdent().append("}").ws().append("else ").appendIf();
     }
 
-    public SourceWriter appendElse() throws IOException {
+    public SourceWriter appendElse() {
         return outdent().append("}").ws().append("else").appendBlockStart();
     }
 
-    public SourceWriter append(int value) throws IOException {
+    public SourceWriter append(int value) {
         return append(String.valueOf(value));
     }
 
     @Override
-    public SourceWriter append(char value) throws IOException {
-        appendIndent();
-        innerWriter.append(value);
-        if (value == '\n') {
-            newLine();
-        } else {
-            column++;
-            offset++;
-        }
-        return this;
-    }
+    public abstract SourceWriter append(char c);
 
     @Override
-    public SourceWriter append(CharSequence csq) throws IOException {
+    public SourceWriter append(CharSequence csq) {
         append(csq, 0, csq.length());
         return this;
     }
 
     @Override
-    public SourceWriter append(CharSequence csq, int start, int end) throws IOException {
-        int last = start;
-        for (int i = start; i < end; ++i) {
-            if (csq.charAt(i) == '\n') {
-                appendSingleLine(csq, last, i);
-                newLine();
-                last = i + 1;
-            }
-        }
-        appendSingleLine(csq, last, end);
-        return this;
-    }
+    public abstract SourceWriter append(CharSequence csq, int start, int end);
 
-    private void appendSingleLine(CharSequence csq, int start, int end) throws IOException {
-        if (start == end) {
-            return;
-        }
-        appendIndent();
-        column += end - start;
-        offset += end - start;
-        innerWriter.append(csq, start, end);
-    }
+    public abstract SourceWriter appendClass(String cls);
 
-    public SourceWriter appendClass(String cls) throws IOException {
-        return appendName(naming.getNameFor(cls));
-    }
-
-    public SourceWriter appendClass(Class<?> cls) throws IOException {
+    public SourceWriter appendClass(Class<?> cls) {
         return appendClass(cls.getName());
     }
 
-    public SourceWriter appendField(FieldReference field) throws IOException {
-        return append(naming.getNameFor(field));
-    }
+    public abstract SourceWriter appendField(FieldReference field);
 
-    public SourceWriter appendStaticField(FieldReference field) throws IOException {
-        return appendName(naming.getFullNameFor(field));
-    }
+    public abstract SourceWriter appendStaticField(FieldReference field);
 
-    public SourceWriter appendMethod(MethodDescriptor method) throws IOException {
-        return append(naming.getNameFor(method));
-    }
+    public abstract SourceWriter appendMethod(MethodDescriptor method);
 
     public SourceWriter appendMethod(String name, Class<?>... params) throws IOException {
-        return append(naming.getNameFor(new MethodDescriptor(name, params)));
+        return appendMethod(new MethodDescriptor(name, params));
     }
 
-    public SourceWriter appendMethodBody(MethodReference method) throws IOException {
-        return appendName(naming.getFullNameFor(method));
-    }
+    public abstract SourceWriter appendMethodBody(MethodReference method);
 
-    public SourceWriter appendMethodBody(String className, String name, ValueType... params) throws IOException {
+    public SourceWriter appendMethodBody(String className, String name, ValueType... params) {
         return appendMethodBody(new MethodReference(className, new MethodDescriptor(name, params)));
     }
 
-    public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params) throws IOException {
+    public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params) {
         return appendMethodBody(new MethodReference(cls, name, params));
     }
 
-    public SourceWriter appendFunction(String name) throws IOException {
-        return append(naming.getNameForFunction(name));
-    }
+    public abstract SourceWriter appendFunction(String name);
 
-    public SourceWriter appendInit(MethodReference method) throws IOException {
-        return appendName(naming.getNameForInit(method));
-    }
+    public abstract SourceWriter appendExternal(String name);
 
-    public SourceWriter appendClassInit(String className) throws IOException {
-        return appendName(naming.getNameForClassInit(className));
-    }
+    public abstract SourceWriter appendInit(MethodReference method);
 
-    private SourceWriter appendName(ScopedName name) throws IOException {
-        if (name.scoped) {
-            append(naming.getScopeName()).append(".");
-        }
-        append(name.value);
-        return this;
-    }
+    public abstract SourceWriter appendClassInit(String className);
 
-    private void appendIndent() throws IOException {
-        if (minified) {
-            return;
-        }
-        if (lineStart) {
-            for (int i = 0; i < indentSize; ++i) {
-                innerWriter.append("    ");
-                column += 4;
-                offset += 4;
-            }
-            lineStart = false;
-        }
-    }
+    public abstract SourceWriter newLine();
 
-    public SourceWriter newLine() throws IOException {
-        innerWriter.append('\n');
-        column = 0;
-        ++line;
-        ++offset;
-        lineStart = true;
-        return this;
-    }
+    public abstract SourceWriter ws();
 
-    public SourceWriter ws() throws IOException {
-        if (column >= lineWidth) {
-            newLine();
-        } else {
-            if (!minified) {
-                innerWriter.append(' ');
-                column++;
-                offset++;
-            }
-        }
-        return this;
-    }
+    public abstract SourceWriter tokenBoundary();
 
-    public SourceWriter tokenBoundary() throws IOException {
-        if (column >= lineWidth) {
-            newLine();
-        }
-        return this;
-    }
+    public abstract SourceWriter softNewLine();
 
-    public SourceWriter softNewLine() throws IOException {
-        if (!minified) {
-            innerWriter.append('\n');
-            column = 0;
-            ++offset;
-            ++line;
-            lineStart = true;
-        }
-        return this;
-    }
+    public abstract SourceWriter indent();
 
-    public SourceWriter indent() {
-        ++indentSize;
-        return this;
-    }
+    public abstract SourceWriter outdent();
 
-    public SourceWriter outdent() {
-        --indentSize;
-        return this;
-    }
+    public abstract void enterLocation();
 
-    public NamingStrategy getNaming() {
-        return naming;
-    }
+    public abstract void emitMethod(MethodDescriptor method);
 
-    @Override
-    public int getColumn() {
-        return column;
-    }
+    public abstract void emitClass(String className);
 
-    @Override
-    public int getLine() {
-        return line;
-    }
+    public abstract void exitLocation();
 
-    @Override
-    public int getOffset() {
-        return offset;
-    }
+    public abstract void emitLocation(String fileName, int line);
 }

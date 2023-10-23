@@ -26,7 +26,7 @@ import org.teavm.model.MethodReference;
 
 public class WeakReferenceGenerator implements Generator {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "<init>":
                 generateConstructor(context, writer);
@@ -40,11 +40,11 @@ public class WeakReferenceGenerator implements Generator {
         }
     }
 
-    private void generateConstructor(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateConstructor(GeneratorContext context, SourceWriter writer) {
         writer.append("var supported").ws().append("=").ws();
         isSupported(writer).append(";").softNewLine();
         writer.append("var value").ws().append("=").ws().append("supported").ws()
-                .append("?").ws().append("new $rt_globals.WeakRef(")
+                .append("?").ws().append("new ").appendExternal("WeakRef").append("(")
                 .append(context.getParameterName(1)).append(")").ws();
         writer.append(":").ws().append(context.getParameterName(0)).append(";").softNewLine();
 
@@ -67,7 +67,7 @@ public class WeakReferenceGenerator implements Generator {
         writer.appendBlockEnd();
     }
 
-    private void generateGet(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateGet(GeneratorContext context, SourceWriter writer) {
         writer.append("var value").ws().append("=").ws().append(context.getParameterName(0)).append(".")
                 .appendField(new FieldReference(WeakReference.class.getName(), "value"))
                 .append(";").softNewLine();
@@ -84,14 +84,14 @@ public class WeakReferenceGenerator implements Generator {
         writer.appendBlockEnd();
     }
 
-    private void generateClear(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateClear(GeneratorContext context, SourceWriter writer) {
         writer.append(context.getParameterName(0)).append(".")
                 .appendField(new FieldReference(WeakReference.class.getName(), "value")).ws();
         writer.append("=").ws().append("null;").softNewLine();
     }
 
-    private SourceWriter isSupported(SourceWriter writer) throws IOException {
-        return writer.append("typeof ").append("$rt_globals.WeakRef").ws().append("!==").ws()
+    private SourceWriter isSupported(SourceWriter writer) {
+        return writer.append("typeof ").appendExternal("WeakRef").ws().append("!==").ws()
                 .append("'undefined'");
     }
 }

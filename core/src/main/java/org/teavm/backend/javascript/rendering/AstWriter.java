@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -152,19 +151,19 @@ public class AstWriter {
         });
     }
 
-    public void print(Object node) throws IOException {
+    public void print(Object node) {
         print((AstNode) node);
     }
 
-    public void print(Object node, int precedence) throws IOException {
+    public void print(Object node, int precedence) {
         print((AstNode) node, precedence);
     }
 
-    public void print(AstNode node) throws IOException {
+    public void print(AstNode node) {
         print(node, PRECEDENCE_COMMA);
     }
 
-    public void print(AstNode node, int precedence) throws IOException {
+    public void print(AstNode node, int precedence) {
         switch (node.getType()) {
             case Token.SCRIPT:
                 print((AstRoot) node);
@@ -302,14 +301,14 @@ public class AstWriter {
         }
     }
 
-    private void print(AstRoot node) throws IOException {
+    private void print(AstRoot node) {
         for (Node child : node) {
             print((AstNode) child);
             writer.softNewLine();
         }
     }
 
-    private void print(Block node) throws IOException {
+    private void print(Block node) {
         writer.append('{').softNewLine().indent();
         for (Node child = node.getFirstChild(); child != null; child = child.getNext()) {
             print((AstNode) child);
@@ -318,7 +317,7 @@ public class AstWriter {
         writer.outdent().append('}');
     }
 
-    private void print(Scope node) throws IOException {
+    private void print(Scope node) {
         writer.append('{').softNewLine().indent();
         for (Node child = node.getFirstChild(); child != null; child = child.getNext()) {
             print((AstNode) child);
@@ -327,14 +326,14 @@ public class AstWriter {
         writer.outdent().append('}');
     }
 
-    private void print(LabeledStatement node) throws IOException {
+    private void print(LabeledStatement node) {
         for (Label label : node.getLabels()) {
             writer.append(label.getName()).append(':').ws();
         }
         print(node.getStatement());
     }
 
-    private void print(BreakStatement node) throws IOException {
+    private void print(BreakStatement node) {
         writer.append("break");
         if (node.getBreakLabel() != null) {
             writer.append(' ').append(node.getBreakLabel().getString());
@@ -342,7 +341,7 @@ public class AstWriter {
         writer.append(';');
     }
 
-    private void print(ContinueStatement node) throws IOException {
+    private void print(ContinueStatement node) {
         writer.append("continue");
         if (node.getLabel() != null) {
             writer.append(' ').append(node.getLabel().getString());
@@ -350,7 +349,7 @@ public class AstWriter {
         writer.append(';');
     }
 
-    private void print(ReturnStatement node) throws IOException {
+    private void print(ReturnStatement node) {
         writer.append("return");
         if (node.getReturnValue() != null) {
             writer.append(' ');
@@ -359,13 +358,13 @@ public class AstWriter {
         writer.append(';');
     }
 
-    private void print(ThrowStatement node) throws IOException {
+    private void print(ThrowStatement node) {
         writer.append("throw ");
         print(node.getExpression());
         writer.append(';');
     }
 
-    private void print(DoLoop node) throws IOException {
+    private void print(DoLoop node) {
         writer.append("do ").ws();
         print(node.getBody());
         writer.append("while").ws().append('(');
@@ -373,7 +372,7 @@ public class AstWriter {
         writer.append(");");
     }
 
-    private void print(ForInLoop node) throws IOException {
+    private void print(ForInLoop node) {
         writer.append("for");
         if (node.isForEach()) {
             writer.append(" each");
@@ -386,7 +385,7 @@ public class AstWriter {
         print(node.getBody());
     }
 
-    private void print(ForLoop node) throws IOException {
+    private void print(ForLoop node) {
         writer.append("for").ws().append('(');
         print(node.getInitializer());
         writer.append(';');
@@ -397,14 +396,14 @@ public class AstWriter {
         print(node.getBody());
     }
 
-    private void print(WhileLoop node) throws IOException {
+    private void print(WhileLoop node) {
         writer.append("while").ws().append('(');
         print(node.getCondition());
         writer.append(')').ws();
         print(node.getBody());
     }
 
-    private void print(IfStatement node) throws IOException {
+    private void print(IfStatement node) {
         writer.append("if").ws().append('(');
         print(node.getCondition());
         writer.append(')').ws();
@@ -415,7 +414,7 @@ public class AstWriter {
         }
     }
 
-    private void print(SwitchStatement node) throws IOException {
+    private void print(SwitchStatement node) {
         writer.append("switch").ws().append('(');
         print(node.getExpression());
         writer.append(')').ws().append('{').indent().softNewLine();
@@ -439,7 +438,7 @@ public class AstWriter {
         writer.outdent().append('}');
     }
 
-    private void print(TryStatement node) throws IOException {
+    private void print(TryStatement node) {
         writer.append("try ");
         print(node.getTryBlock());
         for (CatchClause cc : node.getCatchClauses()) {
@@ -458,7 +457,7 @@ public class AstWriter {
         }
     }
 
-    private void print(VariableDeclaration node) throws IOException {
+    private void print(VariableDeclaration node) {
         switch (node.getType()) {
             case Token.VAR:
                 writer.append("var ");
@@ -482,7 +481,7 @@ public class AstWriter {
         }
     }
 
-    private void print(VariableInitializer node) throws IOException {
+    private void print(VariableInitializer node) {
         print(node.getTarget());
         if (node.getInitializer() != null) {
             writer.ws().append('=').ws();
@@ -490,19 +489,19 @@ public class AstWriter {
         }
     }
 
-    private void print(ExpressionStatement node) throws IOException {
+    private void print(ExpressionStatement node) {
         print(node.getExpression());
         writer.append(';');
     }
 
-    private void print(ElementGet node) throws IOException {
+    private void print(ElementGet node) {
         print(node.getTarget(), PRECEDENCE_MEMBER);
         writer.append('[');
         print(node.getElement());
         writer.append(']');
     }
 
-    private void print(PropertyGet node) throws IOException {
+    private void print(PropertyGet node) {
         print(node.getLeft(), PRECEDENCE_MEMBER);
         writer.append('.');
         var oldRootScope = rootScope;
@@ -511,7 +510,7 @@ public class AstWriter {
         rootScope = oldRootScope;
     }
 
-    private void print(FunctionCall node, int precedence) throws IOException {
+    private void print(FunctionCall node, int precedence) {
         if (tryJavaInvocation(node)) {
             return;
         }
@@ -539,7 +538,7 @@ public class AstWriter {
         }
     }
 
-    private boolean tryJavaInvocation(FunctionCall node) throws IOException {
+    private boolean tryJavaInvocation(FunctionCall node) {
         if (!(node.getTarget() instanceof PropertyGet)) {
             return false;
         }
@@ -572,7 +571,7 @@ public class AstWriter {
         return str.substring("$$JSO$$_".length());
     }
 
-    private void print(ConditionalExpression node, int precedence) throws IOException {
+    private void print(ConditionalExpression node, int precedence) {
         if (precedence < PRECEDENCE_COND) {
             writer.append('(');
         }
@@ -586,7 +585,7 @@ public class AstWriter {
         }
     }
 
-    private void printList(List<? extends AstNode> nodes) throws IOException {
+    private void printList(List<? extends AstNode> nodes) {
         if (nodes == null || nodes.isEmpty()) {
             return;
         }
@@ -597,7 +596,7 @@ public class AstWriter {
         }
     }
 
-    private void print(ArrayComprehension node) throws IOException {
+    private void print(ArrayComprehension node) {
         writer.append("[");
         for (ArrayComprehensionLoop loop : node.getLoops()) {
             writer.append("for").ws().append("(");
@@ -615,7 +614,7 @@ public class AstWriter {
         writer.append(']');
     }
 
-    private void print(GeneratorExpression node) throws IOException {
+    private void print(GeneratorExpression node) {
         writer.append("(");
         for (GeneratorExpressionLoop loop : node.getLoops()) {
             writer.append("for").ws().append("(");
@@ -633,17 +632,17 @@ public class AstWriter {
         writer.append(')');
     }
 
-    private void print(NumberLiteral node) throws IOException {
+    private void print(NumberLiteral node) {
         writer.append(node.getValue());
     }
 
-    private void print(StringLiteral node) throws IOException {
+    private void print(StringLiteral node) {
         writer.append(node.getQuoteCharacter());
         writer.append(ScriptRuntime.escapeString(node.getValue(), node.getQuoteCharacter()));
         writer.append(node.getQuoteCharacter());
     }
 
-    private void print(Name node, int precedence) throws IOException {
+    private void print(Name node, int precedence) {
         if (rootScope) {
             var alias = nameMap.get(node.getIdentifier());
             if (alias == null) {
@@ -659,17 +658,17 @@ public class AstWriter {
         }
     }
 
-    private void print(RegExpLiteral node) throws IOException {
+    private void print(RegExpLiteral node) {
         writer.append('/').append(node.getValue()).append('/').append(node.getFlags());
     }
 
-    private void print(ArrayLiteral node) throws IOException {
+    private void print(ArrayLiteral node) {
         writer.append('[');
         printList(node.getElements());
         writer.append(']');
     }
 
-    private void print(ObjectLiteral node) throws IOException {
+    private void print(ObjectLiteral node) {
         writer.append('{').ws();
         if (node.getElements() != null && !node.getElements().isEmpty()) {
             print(node.getElements().get(0));
@@ -681,7 +680,7 @@ public class AstWriter {
         writer.ws().append('}');
     }
 
-    private void print(ObjectProperty node) throws IOException {
+    private void print(ObjectProperty node) {
         if (node.isGetterMethod()) {
             writer.append("get ");
         } else if (node.isSetterMethod()) {
@@ -697,7 +696,7 @@ public class AstWriter {
         print(node.getRight());
     }
 
-    private void print(FunctionNode node) throws IOException {
+    private void print(FunctionNode node) {
         if (!node.isMethod()) {
             writer.append("function");
         }
@@ -721,18 +720,18 @@ public class AstWriter {
         }
     }
 
-    private void print(LetNode node) throws IOException {
+    private void print(LetNode node) {
         writer.append("let").ws().append('(');
         printList(node.getVariables().getVariables());
         writer.append(')');
         print(node.getBody());
     }
 
-    private void print(ParenthesizedExpression node, int precedence) throws IOException {
+    private void print(ParenthesizedExpression node, int precedence) {
         print(node.getExpression(), precedence);
     }
 
-    private void printUnary(UnaryExpression node, int precedence) throws IOException {
+    private void printUnary(UnaryExpression node, int precedence) {
         int innerPrecedence = PRECEDENCE_PREFIX;
 
         if (innerPrecedence > precedence) {
@@ -755,7 +754,7 @@ public class AstWriter {
         }
     }
 
-    private void printUnary(UpdateExpression node, int precedence) throws IOException {
+    private void printUnary(UpdateExpression node, int precedence) {
         int innerPrecedence = node.isPostfix() ? PRECEDENCE_POSTFIX : PRECEDENCE_PREFIX;
 
         if (innerPrecedence > precedence) {
@@ -784,7 +783,7 @@ public class AstWriter {
         }
     }
 
-    private void printInfix(InfixExpression node, int precedence) throws IOException {
+    private void printInfix(InfixExpression node, int precedence) {
         int innerPrecedence = getPrecedence(node.getType());
 
         if (innerPrecedence > precedence) {

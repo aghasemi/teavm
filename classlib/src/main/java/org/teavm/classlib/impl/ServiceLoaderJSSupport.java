@@ -53,9 +53,11 @@ public class ServiceLoaderJSSupport implements Generator {
         String param = context.getParameterName(1);
         writer.append("var cls = " + param + ";").softNewLine();
         writer.append("if (!cls.$$serviceList$$) {").indent().softNewLine();
-        writer.append("return $rt_createArray($rt_objcls(), 0);").softNewLine();
+        writer.append("return ").appendFunction("$rt_createArray").append("(")
+                .appendFunction("$rt_objcls").append("(), 0);").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.append("var result = $rt_createArray($rt_objcls(), cls.$$serviceList$$.length);").softNewLine();
+        writer.append("var result").ws().append("=").ws().appendFunction("$rt_createArray")
+                .append("(").appendFunction("$rt_objcls").append("(), cls.$$serviceList$$.length);").softNewLine();
         writer.append("for (var i = 0; i < result.data.length; ++i) {").indent().softNewLine();
         writer.append("var serviceDesc = cls.$$serviceList$$[i];").softNewLine();
         writer.append("result.data[i] = new serviceDesc[0]();").softNewLine();

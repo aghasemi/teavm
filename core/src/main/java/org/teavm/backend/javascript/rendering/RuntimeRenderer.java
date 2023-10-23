@@ -62,39 +62,33 @@ public class RuntimeRenderer {
     }
 
     public void renderRuntime() throws RenderingException {
-        try {
-            renderHandWrittenRuntime("runtime.js");
-            renderSetCloneMethod();
-            renderRuntimeCls();
-            renderRuntimeString();
-            renderRuntimeUnwrapString();
-            renderRuntimeObjcls();
-            renderRuntimeThrowablecls();
-            renderRuntimeThrowableMethods();
-            renderRuntimeNullCheck();
-            renderRuntimeIntern();
-            renderStringClassInit();
-            renderRuntimeThreads();
-            renderRuntimeCreateException();
-            renderCreateStackTraceElement();
-            renderSetStackTrace();
-            renderThrowAIOOBE();
-            renderThrowCCE();
-        } catch (IOException e) {
-            throw new RenderingException("IO error", e);
-        }
+        renderHandWrittenRuntime("runtime.js");
+        renderRuntimeCls();
+        renderRuntimeString();
+        renderRuntimeUnwrapString();
+        renderRuntimeObjcls();
+        renderRuntimeThrowablecls();
+        renderRuntimeThrowableMethods();
+        renderRuntimeNullCheck();
+        renderRuntimeIntern();
+        renderStringClassInit();
+        renderRuntimeThreads();
+        renderRuntimeCreateException();
+        renderCreateStackTraceElement();
+        renderSetStackTrace();
+        renderThrowAIOOBE();
+        renderThrowCCE();
     }
 
-    public void renderHandWrittenRuntime(String name) throws IOException {
+    public void renderHandWrittenRuntime(String name) {
         AstRoot ast = parseRuntime(name);
         ast.visit(new StringConstantElimination());
-        new RuntimeAstTransformer(writer.getNaming()).accept(ast);
         var astWriter = new AstWriter(writer, new DefaultGlobalNameWriter(writer));
         astWriter.hoist(ast);
         astWriter.print(ast);
     }
 
-    private AstRoot parseRuntime(String name) throws IOException {
+    private AstRoot parseRuntime(String name) {
         CompilerEnvirons env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
         env.setLanguageVersion(Context.VERSION_1_8);
@@ -104,18 +98,13 @@ public class RuntimeRenderer {
         try (InputStream input = loader.getResourceAsStream("org/teavm/backend/javascript/" + name);
                 Reader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             return factory.parse(reader, null, 0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void renderSetCloneMethod() throws IOException {
-        writer.append("function $rt_setCloneMethod(target, f)").ws().append("{").softNewLine().indent();
-        writer.append("target.").appendMethod("clone", Object.class).ws().append('=').ws().append("f;").
-                softNewLine();
-        writer.outdent().append("}").newLine();
-    }
-
-    private void renderRuntimeCls() throws IOException {
-        writer.append("function $rt_cls(cls)").ws().append("{").softNewLine().indent();
+    private void renderRuntimeCls() {
+        writer.append("function ").appendFunction("$rt_cls").append("(cls)").ws().append("{").softNewLine().indent();
         writer.append("return ").appendMethodBody("java.lang.Class", "getClass",
                 ValueType.object("org.teavm.platform.PlatformClass"),
                 ValueType.object("java.lang.Class")).append("(cls);")
@@ -123,9 +112,9 @@ public class RuntimeRenderer {
         writer.outdent().append("}").newLine();
     }
 
-    private void renderRuntimeString() throws IOException {
+    private void renderRuntimeString() {
         MethodReference stringCons = new MethodReference(String.class, "<init>", Object.class, void.class);
-        writer.append("function $rt_str(str)").ws().append("{").indent().softNewLine();
+        writer.append("function ").appendFunction("$rt_str").append("(str)").ws().append("{").indent().softNewLine();
         writer.append("if (str === null) {").indent().softNewLine();
         writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
@@ -133,17 +122,17 @@ public class RuntimeRenderer {
         writer.outdent().append("}").newLine();
     }
 
-    private void renderRuntimeUnwrapString() throws IOException {
+    private void renderRuntimeUnwrapString() {
         FieldReference stringChars = new FieldReference(STRING_CLASS, "nativeString");
-        writer.append("function $rt_ustr(str)").ws().append("{").indent().softNewLine();
+        writer.append("function ").appendFunction("$rt_ustr").append("(str)").ws().append("{").indent().softNewLine();
         writer.append("return str").ws().append("!==").ws().append("null");
         writer.ws().append("?").ws().append("str.").appendField(stringChars);
         writer.ws().append(":").ws().append("null").append(";").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
-    private void renderRuntimeNullCheck() throws IOException {
-        writer.append("function $rt_nullCheck(val) {").indent().softNewLine();
+    private void renderRuntimeNullCheck() {
+        writer.append("function ").appendFunction("$rt_nullCheck").append("(val) {").indent().softNewLine();
         writer.append("if (val === null) {").indent().softNewLine();
         writer.append("$rt_throw(").appendInit(NPE_INIT_METHOD).append("());").softNewLine();
         writer.outdent().append("}").softNewLine();
@@ -151,9 +140,9 @@ public class RuntimeRenderer {
         writer.outdent().append("}").newLine();
     }
 
-    private void renderRuntimeIntern() throws IOException {
+    private void renderRuntimeIntern() {
         if (!needInternMethod()) {
-            writer.append("function $rt_intern(str) {").indent().softNewLine();
+            writer.append("function ").appendFunction("$rt_intern").append("(str) {").indent().softNewLine();
             writer.append("return str;").softNewLine();
             writer.outdent().append("}").softNewLine();
         } else {
@@ -161,8 +150,9 @@ public class RuntimeRenderer {
         }
     }
 
-    private void renderStringClassInit() throws IOException {
-        writer.append("function $rt_stringClassInit(str)").ws().append("{").indent().softNewLine();
+    private void renderStringClassInit() {
+        writer.append("function ").appendFunction("$rt_stringClassInit").append("(str)").ws().append("{")
+                .indent().softNewLine();
         writer.appendClassInit("java.lang.String").append("();").softNewLine();
         writer.outdent().append("}").softNewLine();
     }
@@ -176,12 +166,13 @@ public class RuntimeRenderer {
         return method != null && method.hasModifier(ElementModifier.NATIVE);
     }
 
-    private void renderRuntimeObjcls() throws IOException {
-        writer.append("function $rt_objcls() { return ").appendClass("java.lang.Object").append("; }").newLine();
+    private void renderRuntimeObjcls() {
+        writer.append("function ").appendFunction("$rt_objcls").append("() { return ").appendClass("java.lang.Object")
+                .append("; }").newLine();
     }
 
-    private void renderRuntimeThrowablecls() throws IOException {
-        writer.append("function $rt_stecls()").ws().append("{").indent().softNewLine();
+    private void renderRuntimeThrowablecls() {
+        writer.append("function ").appendFunction("$rt_stecls").append("()").ws().append("{").indent().softNewLine();
         writer.append("return ");
         if (classSource.get(STE_CLASS) != null) {
             writer.appendClass(STE_CLASS);
@@ -191,24 +182,27 @@ public class RuntimeRenderer {
         writer.append(";").softNewLine().outdent().append("}").newLine();
     }
 
-    private void renderRuntimeThrowableMethods() throws IOException {
-        writer.append("function $rt_throwableMessage(t)").ws().append("{").indent().softNewLine();
+    private void renderRuntimeThrowableMethods() {
+        writer.append("function ").appendFunction("$rt_throwableMessage").append("(t)").ws().append("{")
+                .indent().softNewLine();
         writer.append("return ");
         writer.appendMethodBody(Throwable.class, "getMessage", String.class).append("(t);").softNewLine();
         writer.outdent().append("}").newLine();
 
-        writer.append("function $rt_throwableCause(t)").ws().append("{").indent().softNewLine();
+        writer.append("function ").appendFunction("$rt_throwableCause").append("(t)").ws().append("{")
+                .indent().softNewLine();
         writer.append("return ");
         writer.appendMethodBody(Throwable.class, "getCause", Throwable.class).append("(t);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
-    private void renderRuntimeThreads() throws IOException {
+    private void renderRuntimeThreads() {
         ClassReader threadCls = classSource.get(THREAD_CLASS);
         MethodReader currentThreadMethod = threadCls != null ? threadCls.getMethod(CURRENT_THREAD_METHOD) : null;
         boolean threadUsed = currentThreadMethod != null && currentThreadMethod.getProgram() != null;
 
-        writer.append("function $rt_getThread()").ws().append("{").indent().softNewLine();
+        writer.append("function ").appendFunction("$rt_getThread").append("()").ws().append("{").indent()
+                .softNewLine();
         if (threadUsed) {
             writer.append("return ").appendMethodBody(Thread.class, "currentThread", Thread.class).append("();")
                     .softNewLine();
@@ -217,7 +211,8 @@ public class RuntimeRenderer {
         }
         writer.outdent().append("}").newLine();
 
-        writer.append("function $rt_setThread(t)").ws().append("{").indent().softNewLine();
+        writer.append("function ").appendFunction("$rt_setThread").append("(t)").ws().append("{")
+                .indent().softNewLine();
         if (threadUsed) {
             writer.append("return ").appendMethodBody(Thread.class, "setCurrentThread", Thread.class, void.class)
                     .append("(t);").softNewLine();
@@ -225,20 +220,21 @@ public class RuntimeRenderer {
         writer.outdent().append("}").newLine();
     }
 
-    private void renderRuntimeCreateException() throws IOException {
-        writer.append("function $rt_createException(message)").ws().append("{").indent().softNewLine();
+    private void renderRuntimeCreateException() {
+        writer.append("function ").appendFunction("$rt_createException").append("(message)").ws()
+                .append("{").indent().softNewLine();
         writer.append("return ");
         writer.appendInit(new MethodReference(RuntimeException.class, "<init>", String.class, void.class));
         writer.append("(message);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
-    private void renderCreateStackTraceElement() throws IOException {
+    private void renderCreateStackTraceElement() {
         ClassReader cls = classSource.get(STACK_TRACE_ELEM_INIT.getClassName());
         MethodReader stackTraceElemInit = cls != null ? cls.getMethod(STACK_TRACE_ELEM_INIT.getDescriptor()) : null;
         boolean supported = stackTraceElemInit != null && stackTraceElemInit.getProgram() != null;
 
-        writer.append("function $rt_createStackElement(")
+        writer.append("function ").appendFunction("$rt_createStackElement").append("(")
                 .append("className,").ws()
                 .append("methodName,").ws()
                 .append("fileName,").ws()
@@ -257,12 +253,13 @@ public class RuntimeRenderer {
         writer.outdent().append("}").newLine();
     }
 
-    private void renderSetStackTrace() throws IOException {
+    private void renderSetStackTrace() {
         ClassReader cls = classSource.get(SET_STACK_TRACE_METHOD.getClassName());
         MethodReader setStackTrace = cls != null ? cls.getMethod(SET_STACK_TRACE_METHOD.getDescriptor()) : null;
         boolean supported = setStackTrace != null && setStackTrace.getProgram() != null;
 
-        writer.append("function $rt_setStack(e,").ws().append("stack)").ws().append("{").indent().softNewLine();
+        writer.append("function ").appendFunction("$rt_setStack").append("(e,").ws().append("stack)").ws().append("{")
+                .indent().softNewLine();
         if (supported) {
             writer.appendMethodBody(SET_STACK_TRACE_METHOD);
             writer.append("(e,").ws().append("stack);").softNewLine();
@@ -270,28 +267,30 @@ public class RuntimeRenderer {
         writer.outdent().append("}").newLine();
     }
 
-    private void renderThrowAIOOBE() throws IOException {
-        writer.append("function $rt_throwAIOOBE()").ws().append("{").indent().softNewLine();
+    private void renderThrowAIOOBE() {
+        writer.append("function ").appendFunction("$rt_throwAIOOBE").append("()").ws().append("{")
+                .indent().softNewLine();
 
         ClassReader cls = classSource.get(AIOOBE_INIT_METHOD.getClassName());
         if (cls != null) {
             MethodReader method = cls.getMethod(AIOOBE_INIT_METHOD.getDescriptor());
             if (method != null && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                writer.append("$rt_throw(").appendInit(AIOOBE_INIT_METHOD).append("());").softNewLine();
+                writer.appendFunction("$rt_throw").append("(").appendInit(AIOOBE_INIT_METHOD).append("());")
+                        .softNewLine();
             }
         }
 
         writer.outdent().append("}").newLine();
     }
 
-    private void renderThrowCCE() throws IOException {
-        writer.append("function $rt_throwCCE()").ws().append("{").indent().softNewLine();
+    private void renderThrowCCE() {
+        writer.append("function ").appendFunction("$rt_throwCCE").append("()").ws().append("{").indent().softNewLine();
 
         ClassReader cls = classSource.get(CCE_INIT_METHOD.getClassName());
         if (cls != null) {
             MethodReader method = cls.getMethod(CCE_INIT_METHOD.getDescriptor());
             if (method != null && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                writer.append("$rt_throw(").appendInit(CCE_INIT_METHOD).append("());").softNewLine();
+                writer.appendFunction("$rt_throw").append("(").appendInit(CCE_INIT_METHOD).append("());").softNewLine();
             }
         }
 

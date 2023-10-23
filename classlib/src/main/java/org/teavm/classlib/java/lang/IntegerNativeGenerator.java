@@ -25,21 +25,21 @@ public class IntegerNativeGenerator implements Injector {
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "divideUnsigned":
-                context.getWriter().append("$rt_udiv(");
+                context.getWriter().appendFunction("$rt_udiv").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(",").ws();
                 context.writeExpr(context.getArgument(1));
                 context.getWriter().append(")");
                 break;
             case "remainderUnsigned":
-                context.getWriter().append("$rt_umod(");
+                context.getWriter().appendFunction("$rt_umod").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(",").ws();
                 context.writeExpr(context.getArgument(1));
                 context.getWriter().append(")");
                 break;
             case "compareUnsigned":
-                context.getWriter().append("$rt_ucmp(");
+                context.getWriter().appendFunction("$rt_ucmp").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(",").ws();
                 context.writeExpr(context.getArgument(1));

@@ -32,7 +32,7 @@ public class ReferenceQueueGenerator implements Generator {
             "reportNext", Reference.class, boolean.class);
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "<init>":
                 generateInitMethod(context, writer);
@@ -43,7 +43,7 @@ public class ReferenceQueueGenerator implements Generator {
         }
     }
 
-    private void generateInitMethod(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateInitMethod(GeneratorContext context, SourceWriter writer) {
         writer.append(context.getParameterName(0)).append(".").appendField(INNER_FIELD).ws().append("=")
                 .ws().append("[];").softNewLine();
 
@@ -52,9 +52,10 @@ public class ReferenceQueueGenerator implements Generator {
         }
     }
 
-    private void generateFinalizationRegistry(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateFinalizationRegistry(GeneratorContext context, SourceWriter writer) {
         writer.append(context.getParameterName(0)).append(".").appendField(REGISTRY_FIELD).ws().append("=")
-                .ws().append("new $rt_globals.FinalizationRegistry(ref").ws().append("=>").appendBlockStart();
+                .ws().append("new ").appendExternal("FinalizationRegistry").append("(ref").ws().append("=>")
+                .appendBlockStart();
         writer.appendIf().append("!").appendMethodBody(REPORT_METHOD).append("(")
                 .append(context.getParameterName(0)).append(",").ws().append("ref))").ws();
         writer.append(context.getParameterName(0)).append(".").appendField(INNER_FIELD)
@@ -62,7 +63,7 @@ public class ReferenceQueueGenerator implements Generator {
         writer.appendBlockEnd().append(");").softNewLine();
     }
 
-    private void generatePollMethod(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generatePollMethod(GeneratorContext context, SourceWriter writer) {
         writer.append("var value").ws().append("=").ws().append(context.getParameterName(0))
                 .append(".").appendField(INNER_FIELD).append(".shift();").softNewLine();
         writer.append("return typeof value").ws().append("!==").ws().append("'undefined'").ws()

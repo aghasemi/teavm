@@ -15,12 +15,16 @@
  */
 package org.teavm.backend.javascript.codegen;
 
-public class SourceWriterBuilder {
+import org.teavm.debugging.information.DebugInformationEmitter;
+import org.teavm.debugging.information.DummyDebugInformationEmitter;
+
+public class OutputSourceWriterBuilder {
     private NamingStrategy naming;
+    private DebugInformationEmitter debugEmitter = new DummyDebugInformationEmitter();
     private boolean minified;
     private int lineWidth = 512;
 
-    public SourceWriterBuilder(NamingStrategy naming) {
+    public OutputSourceWriterBuilder(NamingStrategy naming) {
         this.naming = naming;
     }
 
@@ -36,8 +40,12 @@ public class SourceWriterBuilder {
         this.lineWidth = lineWidth;
     }
 
-    public SourceWriter build(Appendable innerWriter) {
-        SourceWriter writer = new SourceWriter(naming, innerWriter, lineWidth);
+    public void setDebugEmitter(DebugInformationEmitter debugEmitter) {
+        this.debugEmitter = debugEmitter;
+    }
+
+    public OutputSourceWriter build(Appendable innerWriter) {
+        var writer = new OutputSourceWriter(naming, debugEmitter, innerWriter, lineWidth);
         writer.setMinified(minified);
         return writer;
     }

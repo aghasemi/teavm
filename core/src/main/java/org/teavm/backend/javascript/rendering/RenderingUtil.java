@@ -45,7 +45,7 @@ public final class RenderingUtil {
         return sb.toString();
     }
 
-    public static void writeString(SourceWriter writer, String s) throws IOException {
+    public static void writeString(SourceWriter writer, String s) {
         if (s.isEmpty()) {
             writer.append("\"\"");
             return;

@@ -149,7 +149,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                             break;
                         }
                     }
-                    writer.append("$rt_ustr(");
+                    writer.appendFunction("$rt_ustr").append("(");
                     context.writeExpr(context.getArgument(0), Precedence.min());
                     writer.append(")");
                 } else if (methodRef.getDescriptor().parameterType(0) == ValueType.BOOLEAN) {
@@ -182,37 +182,37 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                 break;
 
             case "dataToByteArray":
-                writer.append("$rt_wrapArray($rt_bytecls,").ws();
+                writer.appendFunction("$rt_wrapArray").append("(").appendFunction("$rt_bytecls").append(",").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToShortArray":
-                writer.append("$rt_wrapArray($rt_shortcls,").ws();
+                writer.appendFunction("$rt_wrapArray").append("(").appendFunction("$rt_shortcls").append(",").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToCharArray":
-                writer.append("$rt_wrapArray($rt_charcls,").ws();
+                writer.appendFunction("$rt_wrapArray").append("(").appendFunction("$rt_charcls").append(",").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToIntArray":
-                writer.append("$rt_wrapArray($rt_intcls,").ws();
+                writer.appendFunction("$rt_wrapArray").append("(").appendFunction("$rt_intcls").append(",").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToFloatArray":
-                writer.append("$rt_wrapArray($rt_floatcls,").ws();
+                writer.appendFunction("$rt_wrapArray").append("(").appendFunction("$rt_floatcls").append(",").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToDoubleArray":
-                writer.append("$rt_wrapArray($rt_doublecls,").ws();
+                writer.appendFunction("$rt_wrapArray").append("(").appendFunction("$rt_doublecls").append(",").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToArray":
-                writer.append("$rt_wrapArray($rt_objcls,").ws();
+                writer.appendFunction("$rt_wrapArray").append("(").appendFunction("$rt_objcls").append(",").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;

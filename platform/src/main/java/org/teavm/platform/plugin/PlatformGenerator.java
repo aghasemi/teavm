@@ -88,7 +88,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     }
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "newInstanceImpl":
                 generateNewInstance(context, writer);
@@ -117,7 +117,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         }
     }
 
-    private void generatePrepareNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generatePrepareNewInstance(GeneratorContext context, SourceWriter writer) {
         MethodDependencyInfo newInstanceMethod = context.getDependency().getMethod(
                 new MethodReference(Platform.class, "newInstanceImpl", PlatformClass.class, Object.class));
         writer.append("var c").ws().append("=").ws().append("'$$constructor$$';").softNewLine();
@@ -136,14 +136,16 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         }
     }
 
-    private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateNewInstance(GeneratorContext context, SourceWriter writer) {
         String cls = context.getParameterName(1);
 
-        writer.append("if").ws().append("($rt_resuming())").ws().append("{").indent().softNewLine();
-        writer.append("var $r = $rt_nativeThread().pop();").softNewLine();
+        writer.append("if").ws().append("(").appendFunction("$rt_resuming").append("()")
+                .ws().append("{").indent().softNewLine();
+        writer.append("var $r = ").appendFunction("$rt_nativeThread").append("().pop();").softNewLine();
         writer.append(cls + ".$$constructor$$($r);").softNewLine();
-        writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-        writer.append("return $rt_nativeThread().push($r);").softNewLine();
+        writer.append("if").ws().append("(").appendFunction("$rt_suspending").append("())")
+                .ws().append("{").indent().softNewLine();
+        writer.append("return ").appendFunction("$rt_nativeThread").append("().push($r);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return $r;").softNewLine();
         writer.outdent().append("}").softNewLine();
@@ -155,15 +157,16 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
 
         writer.append("var $r").ws().append('=').ws().append("new ").append(cls).append("();").softNewLine();
         writer.append(cls).append(".$$constructor$$($r);").softNewLine();
-        writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-        writer.append("return $rt_nativeThread().push($r);").softNewLine();
+        writer.append("if").ws().append("(").appendFunction("$rt_suspending").append("())")
+                .ws().append("{").indent().softNewLine();
+        writer.append("return ").appendFunction("$rt_nativeThread").append("().push($r);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return $r;").softNewLine();
     }
 
-    private void generateLookup(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateLookup(GeneratorContext context, SourceWriter writer) {
         String param = context.getParameterName(1);
-        writer.append("switch ($rt_ustr(" + param + ")) {").softNewLine().indent();
+        writer.append("switch (").appendFunction("$rt_ustr").append("(" + param + ")) {").softNewLine().indent();
         for (String name : context.getClassSource().getClassNames()) {
             writer.append("case \"" + name + "\": ").appendClass(name).append(".$clinit(); ")
                     .append("return ").appendClass(name).append(";").softNewLine();
@@ -172,7 +175,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.outdent().append("}").softNewLine();
     }
 
-    private void generateClone(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateClone(GeneratorContext context, SourceWriter writer) {
         String obj = context.getParameterName(1);
         writer.append("var copy").ws().append("=").ws().append("new ").append(obj).append(".constructor();")
                 .softNewLine();
@@ -184,7 +187,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("return copy;").softNewLine();
     }
 
-    private void generateSchedule(GeneratorContext context, SourceWriter writer, boolean timeout) throws IOException {
+    private void generateSchedule(GeneratorContext context, SourceWriter writer, boolean timeout) {
         MethodReference launchRef = new MethodReference(Platform.class, "launchThread",
                 PlatformRunnable.class, void.class);
         String runnable = context.getParameterName(1);
@@ -192,14 +195,14 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         if (timeout) {
             writer.appendMethodBody(launchRef);
         } else {
-            writer.append("$rt_threadStarter(").appendMethodBody(launchRef).append(")");
+            writer.appendFunction("$rt_threadStarter").append("(").appendMethodBody(launchRef).append(")");
         }
         writer.append("(").append(runnable).append(");").softNewLine();
         writer.outdent().append("},").ws().append(timeout ? context.getParameterName(2) : "0")
                 .append(");").softNewLine();
     }
 
-    private void generateEnumConstants(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateEnumConstants(GeneratorContext context, SourceWriter writer) {
         writer.append("var c").ws().append("=").ws().append("'$$enumConstants$$';").softNewLine();
         for (String clsName : context.getClassSource().getClassNames()) {
             ClassReader cls = context.getClassSource().get(clsName);
@@ -230,7 +233,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 .append(");").softNewLine();
     }
 
-    private void generateAnnotations(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateAnnotations(GeneratorContext context, SourceWriter writer) {
         writer.append("var c").ws().append("=").ws().append("'$$annotations$$';").softNewLine();
         for (String clsName : context.getClassSource().getClassNames()) {
             ClassReader annotCls = context.getClassSource().get(clsName + "$$__annotations__$$");

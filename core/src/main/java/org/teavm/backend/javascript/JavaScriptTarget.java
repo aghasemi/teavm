@@ -50,7 +50,7 @@ import org.teavm.backend.javascript.codegen.DefaultAliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultNamingStrategy;
 import org.teavm.backend.javascript.codegen.MinifyingAliasProvider;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
+import org.teavm.backend.javascript.codegen.OutputSourceWriterBuilder;
 import org.teavm.backend.javascript.decompile.PreparedClass;
 import org.teavm.backend.javascript.decompile.PreparedMethod;
 import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueGenerator;
@@ -406,7 +406,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 ? new MinifyingAliasProvider(topLevelNameLimit)
                 : new DefaultAliasProvider(topLevelNameLimit);
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
-        SourceWriterBuilder builder = new SourceWriterBuilder(naming);
+        OutputSourceWriterBuilder builder = new OutputSourceWriterBuilder(naming);
         builder.setMinified(obfuscated);
         SourceWriter sourceWriter = builder.build(writer);
 
@@ -456,7 +456,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             for (RendererListener listener : rendererListeners) {
                 listener.begin(renderer, target);
             }
-            int start = sourceWriter.getOffset();
+            //int start = sourceWriter.getOffset();
 
             renderer.prepare(clsNodes);
             runtimeRenderer.renderRuntime();
@@ -481,12 +481,13 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
 
             for (var entry : controller.getEntryPoints().entrySet()) {
-                sourceWriter.append("$rt_exports.").append(entry.getKey()).ws().append("=").ws();
+                sourceWriter.appendFunction("$rt_exports").append(".").append(entry.getKey()).ws().append("=").ws();
                 var ref = entry.getValue().getMethod();
-                sourceWriter.append("$rt_mainStarter(").appendMethodBody(ref);
+                sourceWriter.appendFunction("$rt_mainStarter").append("(").appendMethodBody(ref);
                 sourceWriter.append(");").newLine();
-                sourceWriter.append("$rt_exports.").append(entry.getKey()).append(".").append("javaException")
-                        .ws().append("=").ws().append("$rt_javaException;").newLine();
+                sourceWriter.appendFunction("$rt_exports").append(".").append(entry.getKey()).append(".")
+                        .append("javaException").ws().append("=").ws().appendFunction("$rt_javaException")
+                        .append(";").newLine();
             }
 
             for (var listener : rendererListeners) {
@@ -495,8 +496,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
             printWrapperEnd(sourceWriter);
 
-            int totalSize = sourceWriter.getOffset() - start;
-            printStats(renderer, totalSize);
+            //int totalSize = sourceWriter.getOffset() - start;
+            //printStats(renderer, totalSize);
         } catch (IOException e) {
             throw new RenderingException("IO Error occurred", e);
         }
@@ -505,7 +506,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private void printWrapperStart(SourceWriter writer) throws IOException {
         writer.append("\"use strict\";").newLine();
         printUmdStart(writer);
-        writer.append("function($rt_globals,").ws().append("$rt_exports");
+        writer.append("function(").appendFunction("$rt_globals").append(",").ws().appendFunction("$rt_exports");
         for (var moduleName : importedModules.values()) {
             writer.append(",").ws().appendFunction(moduleName);
         }
@@ -516,7 +517,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         return importedModules.get(name);
     }
 
-    private void printUmdStart(SourceWriter writer) throws IOException {
+    private void printUmdStart(SourceWriter writer) {
         writer.append("(function(root,").ws().append("module)").appendBlockStart();
         writer.appendIf().append("typeof define").ws().append("===").ws().append("'function'")
                 .ws().append("&&").ws().append("define.amd)").appendBlockStart();
@@ -555,7 +556,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 .ws();
     }
 
-    private void printWrapperEnd(SourceWriter writer) throws IOException {
+    private void printWrapperEnd(SourceWriter writer) {
         writer.outdent().append("}));").newLine();
     }
 

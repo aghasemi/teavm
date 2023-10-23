@@ -31,7 +31,7 @@ public class DoubleGenerator implements Injector {
             context.getWriter().append(')');
             return;
         }
-        context.getWriter().append("$rt_").append(methodRef.getName()).append("(");
+        context.getWriter().appendFunction("$rt_" + methodRef.getName()).append("(");
         context.writeExpr(context.getArgument(0));
         context.getWriter().append(")");
     }
